@@ -41,8 +41,7 @@ options Button::getRawOption() {
   return NONE;
 }
 
-String Button::getStringValue() {
-  options option = getRawOption();
+String Button::getStringValue(options option) {
   if (option == RIGHT) return "RIGHT";
   if (option == UP) return "UP";
   if (option == DOWN) return "DOWN";

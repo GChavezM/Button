@@ -32,9 +32,10 @@ class Button {
 
     int getRawValue();
     options getRawOption();
-    String getStringValue();
-    options getOption(uint16_t block_delay = 500,  uint16_t repeat_delay = 300);
+    options getOption(uint16_t block_delay = 500, uint16_t repeat_delay = 300);
     int getStatus(uint16_t block_delay = 500, uint16_t repeat_delay = 300);
+
+    static String getStringValue(options option);
 
   private:
     uint8_t _pin;
