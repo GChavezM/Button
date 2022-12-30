@@ -27,6 +27,7 @@ enum options {
 
 class Button {
   public:
+    Button(uint8_t pin, boolean pullup);
     Button(uint8_t pin, types type = SIMPLE, boolean pullup = true);
 
     int getRawValue();

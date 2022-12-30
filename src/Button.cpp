@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "Button.h"
 
+Button::Button(uint8_t pin, boolean pullup): Button(pin, SIMPLE, pullup) {}
+
 Button::Button(uint8_t pin, types type, boolean pullup) {
   _pin = pin;
   _block_time = 0;
