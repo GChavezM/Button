@@ -52,6 +52,7 @@ String Button::getStringValue() {
 }
 
 options Button::getOption(uint16_t block_delay, uint16_t repeat_delay) {
+  if (_type == SIMPLE) return NONE;
   if (millis() < _block_time) return NONE;
   options current = getRawOption();
   if (current != NONE) {
@@ -62,6 +63,7 @@ options Button::getOption(uint16_t block_delay, uint16_t repeat_delay) {
 }
 
 int Button::getStatus(uint16_t block_delay, uint16_t repeat_delay) {
+  if (_type == ANALOG) return NONE;
   if (millis() < _block_time) return NONE;
   int current = getRawValue();
   if (current != NONE) {
