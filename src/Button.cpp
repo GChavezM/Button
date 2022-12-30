@@ -21,14 +21,14 @@ Button::Button(uint8_t pin, types type, boolean pullup) {
 }
 
 int Button::getRawValue() {
-  if (_type == ANALOG) {
+  if (_type == LCD_KEYPAD) {
     return analogRead(_pin);
   }
   return _invert ? !digitalRead(_pin) : digitalRead(_pin);
 }
 
 options Button::getRawOption() {
-  if (_type == ANALOG) {
+  if (_type == LCD_KEYPAD) {
     int rawValue = getRawValue();
     if (rawValue > OPTION_TRESHOLD_NONE) return NONE;
     if (rawValue < OPTION_TRESHOLD_RIGHT) return RIGHT;
@@ -62,7 +62,7 @@ options Button::getOption(uint16_t block_delay, uint16_t repeat_delay) {
 }
 
 int Button::getStatus(uint16_t block_delay, uint16_t repeat_delay) {
-  if (_type == ANALOG) return NONE;
+  if (_type == LCD_KEYPAD) return NONE;
   if (millis() < _block_time) return NONE;
   int current = getRawValue();
   if (current != NONE) {

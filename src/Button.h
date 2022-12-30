@@ -6,7 +6,7 @@
 
 enum types {
   SIMPLE,
-  ANALOG
+  LCD_KEYPAD
 };
 
 enum options {
