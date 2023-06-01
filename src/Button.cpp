@@ -1,73 +1,130 @@
 #include <Arduino.h>
 #include "Button.h"
 
-Button::Button(uint8_t pin, boolean pullup): Button(pin, SIMPLE, pullup) {}
+Button::Button(uint8_t pin, boolean pullup, boolean invert): _pin(pin), _invert(invert) {
+  _debounceTime = 50;
+  if (pullup) {
+    _invert = !invert;
+    pinMode(pin, INPUT_PULLUP);
+  } else {
+    pinMode(pin, INPUT);
+  }
+  _lastReading = getRawValue();
+  _lastState = _lastReading;
+  _state = _lastState;
+  _lastTime = millis();
+  _pressedTime = _lastTime;
+  _isLongPressing = false;
+}
 
-Button::Button(uint8_t pin, types type, boolean pullup) {
-  _pin = pin;
-  _block_time = 0;
-  _type = type;
-  _last_option = NONE;
-  if (_type == SIMPLE) {
-    _invert = false;
-    if (pullup) {
-      pinMode(_pin, INPUT_PULLUP);
-      _invert = true;      
-    } else {
-      pinMode(_pin, INPUT);
-    }
-    _last_state = getRawValue();
-  } 
+void Button::setDebounceTime(unsigned long time) {
+  _debounceTime = time;
 }
 
 int Button::getRawValue() {
-  if (_type == LCD_KEYPAD) {
-    return analogRead(_pin);
-  }
   return _invert ? !digitalRead(_pin) : digitalRead(_pin);
 }
 
-options Button::getRawOption() {
-  if (_type == LCD_KEYPAD) {
-    int rawValue = getRawValue();
-    if (rawValue > OPTION_TRESHOLD_NONE) return NONE;
-    if (rawValue < OPTION_TRESHOLD_RIGHT) return RIGHT;
-    if (rawValue < OPTION_TRESHOLD_UP) return UP;
-    if (rawValue < OPTION_TRESHOLD_DOWN) return DOWN;
-    if (rawValue < OPTION_TRESHOLD_LEFT) return LEFT;
-    if (rawValue < OPTION_TRESHOLD_SELECT) return SELECT;
-    return NONE;
+int Button::getValue() {
+  return _state;
+}
+
+bool Button::isPressed() {
+  if (_lastState == LOW && _state == HIGH) {
+    return true;
+  }
+  return false;
+}
+
+bool Button::isReleased() {
+  if (_lastState == HIGH && _state == LOW) {
+    return true;
+  }
+  return false;
+}
+
+bool Button::isLongPressed(unsigned long time) {
+  if (_isLongPressing && _pressDuration > time) {
+    _isLongPressing = false;
+    return true;
+  }
+  return false;
+}
+
+void Button::loop() {
+  int reading = getRawValue();
+  unsigned long currentTime = millis();
+  if (reading != _lastReading) {
+    _lastTime = currentTime;
+    _lastReading = reading;
+  }
+  if ((currentTime - _lastTime) >= _debounceTime) {
+    _lastState = _state;
+    _state = reading;
+  }
+  if (isPressed()) {
+    _pressedTime = currentTime;
+  }
+  if (isReleased()) {
+    _releasedTime = currentTime;
+    _pressDuration = _releasedTime - _pressedTime;
+    _isLongPressing = true;
+  }
+}
+
+ButtonLCD::ButtonLCD(uint8_t pin): _pin(pin) {
+  _debounceTime = 50;
+  _lastReading = _getRawOption();
+  _lastState = _lastReading;
+  _state = _lastState;
+  _lastTime = millis();
+}
+
+void ButtonLCD::setDebounceTime(unsigned long time) {
+  _debounceTime = time;
+}
+
+int ButtonLCD::_getRawValue() {
+  return analogRead(_pin);
+}
+
+option ButtonLCD::_getRawOption() {
+  int rawValue = _getRawValue();
+  if (rawValue > OPTION_TRESHOLD_NONE) return NONE;
+  if (rawValue < OPTION_TRESHOLD_RIGHT) return RIGHT;
+  if (rawValue < OPTION_TRESHOLD_UP) return UP;
+  if (rawValue < OPTION_TRESHOLD_DOWN) return DOWN;
+  if (rawValue < OPTION_TRESHOLD_LEFT) return LEFT;
+  if (rawValue < OPTION_TRESHOLD_SELECT) return SELECT;
+  return NONE;
+}
+
+String ButtonLCD::getStringOption() {
+  option value = getOption();
+  if (value == RIGHT) return "RIGHT";
+  if (value == UP) return "UP";
+  if (value == DOWN) return "DOWN";
+  if (value == LEFT) return "LEFT";
+  if (value == SELECT) return "SELECT";
+  return "NONE";
+}
+
+option ButtonLCD::getOption() {
+  if (_lastState == NONE && _state != NONE) {
+    return _state;
   }
   return NONE;
 }
 
-String Button::getStringValue(options option) {
-  if (option == RIGHT) return "RIGHT";
-  if (option == UP) return "UP";
-  if (option == DOWN) return "DOWN";
-  if (option == LEFT) return "LEFT";
-  if (option == SELECT) return "SELECT";
-  return "";
-}
-
-options Button::getOption(uint16_t block_delay, uint16_t repeat_delay) {
-  if (_type == SIMPLE) return NONE;
-  if (millis() < _block_time) return NONE;
-  options current = getRawOption();
-  if (current != NONE) {
-    _block_time = millis() + (current == _last_option ? repeat_delay : block_delay);
+void ButtonLCD::loop() {
+  option reading = _getRawOption();
+  unsigned long currentTime = millis();
+  if (reading != _lastReading) {
+    _lastTime = currentTime;
+    _lastReading = reading;
   }
-  _last_option = current;
-  return current;
-}
-
-int Button::getStatus(uint16_t block_delay, uint16_t repeat_delay) {
-  if (_type == LCD_KEYPAD) return NONE;
-  if (millis() < _block_time) return NONE;
-  int current = getRawValue();
-  if (current != NONE) {
-    _block_time = millis() + (current == _last_state ? repeat_delay : block_delay);
+  if ((currentTime - _lastTime) >= _debounceTime) {
+    _lastState = _state;
+    _state = reading;
   }
-  _last_state = current;
-  return current;
 }

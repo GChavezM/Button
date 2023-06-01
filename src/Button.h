@@ -1,51 +1,65 @@
 #ifndef Button_h
 #define Button_h
 
-#include <Arduino.h>
-#include <inttypes.h>
-
-enum types {
-  SIMPLE,
-  LCD_KEYPAD
-};
-
-enum options {
+enum option {
   NONE,
-  RIGHT,
+  RIGHT,  
   UP,
   DOWN,
   LEFT,
-  SELECT
+  SELECT,
 };
 
-#define OPTION_TRESHOLD_NONE    1000
-#define OPTION_TRESHOLD_RIGHT   60
-#define OPTION_TRESHOLD_UP      200
-#define OPTION_TRESHOLD_DOWN    400
-#define OPTION_TRESHOLD_LEFT    600
-#define OPTION_TRESHOLD_SELECT  800
+constexpr int OPTION_TRESHOLD_NONE{1000};
+constexpr int OPTION_TRESHOLD_RIGHT{60};
+constexpr int OPTION_TRESHOLD_UP{200};
+constexpr int OPTION_TRESHOLD_DOWN{400};
+constexpr int OPTION_TRESHOLD_LEFT{600};
+constexpr int OPTION_TRESHOLD_SELECT{800};
 
 class Button {
   public:
-    Button(uint8_t pin, boolean pullup);
-    Button(uint8_t pin, types type = SIMPLE, boolean pullup = true);
-
+    Button(uint8_t pin, boolean pullup = true, boolean invert = false);
+    void setDebounceTime(unsigned long time);
     int getRawValue();
-    options getRawOption();
-    options getOption(uint16_t block_delay = 500, uint16_t repeat_delay = 300);
-    int getStatus(uint16_t block_delay = 500, uint16_t repeat_delay = 300);
-
-    static String getStringValue(options option);
+    int getValue();
+    bool isPressed();
+    bool isReleased();
+    bool isLongPressed(unsigned long time = 1000);
+    void loop();
 
   private:
     uint8_t _pin;
-    uint32_t _block_time;
-    types _type;
-    options _last_option;
-    boolean _invert;
-    int _last_state;
+    uint8_t _invert;
+    uint8_t _lastReading;
+    uint8_t _lastState;
+    uint8_t _state;
+    bool _isLongPressing;
+    bool _isPressing;
+    unsigned long _debounceTime;
+    unsigned long _lastTime;
+    unsigned long _pressedTime;
+    unsigned long _releasedTime;
+    unsigned long _pressDuration;
+};
 
-
+class ButtonLCD {
+  public:
+    ButtonLCD(uint8_t pin);
+    void setDebounceTime(unsigned long time);
+    option getOption();
+    String getStringOption();
+    option getValue();
+    void loop();
+  private:
+    uint8_t _pin;
+    option _lastReading;
+    option _lastState;
+    option _state;
+    unsigned long _debounceTime;
+    unsigned long _lastTime;
+    int _getRawValue();
+    option _getRawOption();
 };
 
 #endif
